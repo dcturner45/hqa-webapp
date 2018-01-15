@@ -1,13 +1,17 @@
 const express = require('express');
 const bodyParser = require('body-parser');
 const app = express();
-const fs = require('fs')
+const fs = require('fs');
+const md5 = require('md5');
 app.use(bodyParser.urlencoded({extended: true}));
 app.use(bodyParser.json());
 const port = 80;
 
+// (very) thin layer of protection from malicious incoming post requests
+const passwordMd5 = 'cb72af8161b57de3951a8e8aa198baa0'
+
 var currentQuestion = {
-    question: "Test Question?",
+    question: "[Question will appear here]",
     answers: [
         ['Answer 1', 0, 0],
         ['Answer 2', 0, 0],
@@ -32,9 +36,15 @@ app.get('/', function(req, res) {
 });
 
 app.post('/newQuestion', function(req, res) {
-    console.log('got new question', req.body);
-    currentQuestion = req.body;
-    res.end();   
+    if (md5(req.body.password) == passwordMd5) {
+        console.log('got new question', req.body.questionData);
+        currentQuestion = req.body.questionData;
+        res.end();   
+    }
+    else {
+        console.log('received post with invalid password')
+        res.status(403).end('invalid password');
+    }
 });
 
 app.listen(port, () => console.log('listening on port', port));
